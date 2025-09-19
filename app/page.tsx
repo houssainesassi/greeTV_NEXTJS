@@ -1,42 +1,19 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import Image from "next/image"
 
-const defaultMessages = {
-  morning: "Good morning 🌅",
-  afternoon: "Good afternoon ☀️",
-  evening: "Good evening 🌇",
-  night: "Good night 🌙",
-}
-
 export default function HomePage() {
   const [customMessage, setCustomMessage] = useState("")
-  const [selectedPeriod, setSelectedPeriod] = useState("morning")
+  const [durationHours, setDurationHours] = useState("1") // default 1 hour
   const router = useRouter()
   const { toast } = useToast()
-
-  const loadStoredMessages = () => {
-    if (typeof window !== "undefined") {
-      const stored = JSON.parse(localStorage.getItem("greet_custom") || "{}")
-      return { ...defaultMessages, ...stored }
-    }
-    return defaultMessages
-  }
-
-  const saveStoredMessages = (messages: typeof defaultMessages) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("greet_custom", JSON.stringify(messages))
-    }
-  }
 
   const handleSave = () => {
     const trimmedMessage = customMessage.trim()
@@ -49,64 +26,55 @@ export default function HomePage() {
       return
     }
 
-    const storedMessages = loadStoredMessages()
-    console.log("[v0] Saving message:", trimmedMessage, "for period:", selectedPeriod)
-
-    if (selectedPeriod === "all") {
-      storedMessages.morning = trimmedMessage
-      storedMessages.afternoon = trimmedMessage
-      storedMessages.evening = trimmedMessage
-      storedMessages.night = trimmedMessage
-    } else {
-      storedMessages[selectedPeriod as keyof typeof defaultMessages] = trimmedMessage
+    const overrideData = {
+      message: trimmedMessage,
+      startTime: Date.now(),
+      duration: Number(durationHours) * 60 * 60 * 1000, // duration in ms
     }
 
-    saveStoredMessages(storedMessages)
-    console.log("[v0] Messages after save:", storedMessages)
-    setCustomMessage("")
+    localStorage.setItem("greet_override", JSON.stringify(overrideData))
 
+    setCustomMessage("")
     toast({
       title: "Success",
       description: "Saved successfully!",
     })
 
-    // Navigate to output page after a short delay
     setTimeout(() => {
       router.push("/output")
     }, 1000)
   }
 
   const handleReset = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("greet_custom")
-    }
+    localStorage.removeItem("greet_override")
     toast({
       title: "Success",
-      description: "All messages cleared!",
+      description: "Custom message cleared!",
     })
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSave()
-    }
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
-      <div className="w-full max-w-4xl p-10 relative">
-        <div className="bg-white/5 backdrop-blur-sm p-10 rounded-3xl shadow-2xl border border-white/10">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-900">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-indigo-400/15 to-cyan-600/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-violet-400/10 to-pink-600/10 rounded-full blur-2xl animate-pulse delay-500"></div>
+      </div>
+
+      <div className="w-full max-w-4xl p-10 relative z-10">
+        <div className="bg-white/10 backdrop-blur-xl p-12 rounded-3xl shadow-2xl border border-white/20 transition-all duration-700 hover:bg-white/15 hover:shadow-3xl hover:border-white/30">
           <Image
             src="/electring-wiring-logo.jpg"
             alt="Mediterranean Electric Wiring Logo"
             width={180}
             height={60}
-            className="absolute top-5 left-5 rounded-xl"
+            className="absolute top-6 left-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
           />
 
-          <div className="mt-20 space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="customMsg" className="text-slate-200 text-lg">
+          <div className="mt-24 space-y-8 animate-in fade-in duration-1000">
+            {/* Input message */}
+            <div className="space-y-3">
+              <Label htmlFor="customMsg" className="text-white/90 text-lg font-medium tracking-wide">
                 Write a message:
               </Label>
               <Input
@@ -115,40 +83,39 @@ export default function HomePage() {
                 placeholder="Type your custom message"
                 value={customMessage}
                 onChange={(e) => setCustomMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="bg-white/5 border-white/20 text-slate-200 placeholder:text-slate-400 text-xl p-6 rounded-xl"
+                className="bg-white/10 border-white/30 text-white placeholder:text-white/60 text-xl p-7 rounded-2xl"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-slate-200 text-lg">Select period:</Label>
-              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger className="bg-white/5 border-white/20 text-slate-200 text-xl p-6 rounded-xl">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-white/20">
-                  <SelectItem value="morning">Morning (5:00 - 11:59)</SelectItem>
-                  <SelectItem value="afternoon">Afternoon (12:00 - 16:59)</SelectItem>
-                  <SelectItem value="evening">Evening (17:00 - 21:59)</SelectItem>
-                  <SelectItem value="night">Night (22:00 - 4:59)</SelectItem>
-                  <SelectItem value="all">Always (overrides all greetings)</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Duration */}
+            <div className="space-y-3">
+              <Label className="text-white/90 text-lg font-medium tracking-wide">
+                Duration (hours):
+              </Label>
+              <Input
+                type="number"
+                min="1"
+                max="24"
+                value={durationHours}
+                onChange={(e) => setDurationHours(e.target.value)}
+                className="bg-white/10 border-white/30 text-white text-xl p-7 rounded-2xl"
+              />
             </div>
 
-            <div className="flex gap-4 pt-4">
+            {/* Buttons */}
+            <div className="flex gap-6 pt-6">
               <Button
                 onClick={handleSave}
-                className="bg-sky-400 hover:bg-sky-500 text-slate-900 font-semibold text-lg px-6 py-4 rounded-xl transition-all hover:-translate-y-1 hover:shadow-lg"
+                className="bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-900 font-semibold text-lg px-8 py-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-xl"
               >
                 Save
               </Button>
               <Button
                 onClick={handleReset}
                 variant="outline"
-                className="border-white/20 text-slate-200 hover:bg-white/10 text-lg px-6 py-4 rounded-xl bg-transparent"
+                className="border-white/30 text-white hover:bg-white/15 hover:border-white/50 text-lg px-8 py-6 rounded-2xl bg-white/5 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-lg"
               >
-                Clear Saved Greetings
+                Clear
               </Button>
             </div>
           </div>

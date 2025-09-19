@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import Link from "next/link"
 
 const defaultMessages = {
   morning: "Good morning 🌅",
-  afternoon: "Good afternoon ",
+  afternoon: "Good afternoon ☀️",
   evening: "Good evening 🌇",
   night: "Good night 🌙",
 }
@@ -15,24 +16,7 @@ type Period = keyof typeof defaultMessages
 export default function OutputPage() {
   const [greeting, setGreeting] = useState("...")
   const [currentTime, setCurrentTime] = useState("--:--")
-
-  const loadStoredMessages = () => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("greet_custom")
-      console.log("[v0] Raw stored data:", stored)
-      if (stored) {
-        try {
-          const parsedStored = JSON.parse(stored)
-          console.log("[v0] Parsed stored messages:", parsedStored)
-          return { ...defaultMessages, ...parsedStored }
-        } catch (error) {
-          console.log("[v0] Error parsing stored messages:", error)
-          return defaultMessages
-        }
-      }
-    }
-    return defaultMessages
-  }
+  const [mounted, setMounted] = useState(false)
 
   const getCurrentPeriod = (): Period => {
     const hour = new Date().getHours()
@@ -47,60 +31,78 @@ export default function OutputPage() {
   }
 
   const updateGreeting = () => {
-    const storedMessages = loadStoredMessages()
-    const period = getCurrentPeriod()
-    console.log("[v0] Current period:", period)
-    console.log("[v0] Available messages:", storedMessages)
+    let message = defaultMessages[getCurrentPeriod()]
 
-    const message = storedMessages[period] || defaultMessages[period]
-    console.log("[v0] Selected message:", message)
+    // check if override exists
+    const overrideRaw = localStorage.getItem("greet_override")
+    if (overrideRaw) {
+      try {
+        const override = JSON.parse(overrideRaw)
+        const now = Date.now()
+        if (now - override.startTime < override.duration) {
+          message = override.message
+        } else {
+          localStorage.removeItem("greet_override")
+        }
+      } catch (err) {
+        console.log("Error parsing override:", err)
+      }
+    }
 
     setGreeting(message)
     setCurrentTime("Time: " + formatTime(new Date()))
   }
 
   useEffect(() => {
+    setMounted(true)
     updateGreeting()
-
-    // Listen for storage changes from other tabs/windows
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "greet_custom") {
-        console.log("[v0] Storage changed, updating greeting")
-        updateGreeting()
-      }
-    }
-
-    window.addEventListener("storage", handleStorageChange)
-    const interval = setInterval(updateGreeting, 20000) // Update every 20 seconds
-
-    return () => {
-      clearInterval(interval)
-      window.removeEventListener("storage", handleStorageChange)
-    }
+    const interval = setInterval(updateGreeting, 20000)
+    return () => clearInterval(interval)
   }, [])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
-      <div className="w-full max-w-4xl p-10 relative">
-        <div className="bg-white/5 backdrop-blur-sm p-10 rounded-3xl shadow-2xl border border-white/10">
-          <Image
-            src="/electring-wiring-logo.jpg"
-            alt="Mediterranean Electric Wiring Logo"
-            width={180}
-            height={60}
-            className="absolute top-5 left-5 rounded-xl"
-          />
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-900">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-indigo-400/15 to-cyan-600/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-violet-400/10 to-pink-600/10 rounded-full blur-2xl animate-pulse delay-500"></div>
+      </div>
 
-          <div className="flex flex-col justify-center items-center text-center h-96 bg-gradient-to-br from-white/5 to-black/20 rounded-xl overflow-hidden relative">
-            <div className="w-full overflow-hidden">
-              <h1 className="greeting-slide text-4xl md:text-6xl lg:text-8xl font-bold text-slate-200 mb-2 leading-tight tracking-wide px-4">
-                {greeting}
-              </h1>
-            </div>
-            <p className="absolute bottom-3 right-4 text-xl md:text-2xl text-slate-300 opacity-90">{currentTime}</p>
-          </div>
+      <div className="w-full max-w-4xl p-10 relative z-10">
+        <div className="bg-white/10 backdrop-blur-xl p-12 rounded-3xl shadow-2xl border border-white/20 flex flex-col justify-center items-center text-center h-[450px] relative overflow-hidden">
+          <Link href="/">
+            <Image
+              src="/electring-wiring-logo.jpg"
+              alt="Mediterranean Electric Wiring Logo"
+              width={180}
+              height={60}
+              className="absolute top-6 left-6 rounded-2xl cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg"
+            />
+          </Link>
+
+          {mounted && (
+            <h1 className="text-4xl md:text-6xl lg:text-8xl font-bold text-white/95 mb-2 leading-tight tracking-wide px-4 animate-marquee whitespace-nowrap">
+              {greeting}
+            </h1>
+          )}
+          <p className="absolute bottom-6 right-8 text-xl md:text-2xl text-white/80 opacity-90 font-medium tracking-wide">
+            {currentTime}
+          </p>
         </div>
       </div>
+
+      {/* Custom animation */}
+      <style jsx>{`
+        @keyframes marquee {
+          0% { transform: translateX(100%); }
+          100% { transform: translateX(-100%); }
+        }
+        .animate-marquee {
+          display: inline-block;
+          animation: marquee 10s linear infinite;
+          white-space: nowrap;
+        }
+      `}</style>
     </div>
   )
 }
