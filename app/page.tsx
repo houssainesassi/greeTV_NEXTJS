@@ -1,60 +1,66 @@
 "use client"
-
-import type React from "react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
+import { useState, useEffect } from "react"
 import Image from "next/image"
+import Link from "next/link"
 
-export default function HomePage() {
-  const [customMessage, setCustomMessage] = useState("")
-  const [durationHours, setDurationHours] = useState("1") // default 1 hour
-  const router = useRouter()
-  const { toast } = useToast()
+const defaultMessages = {
+  morning: "Good morning 🌅",
+  afternoon: "Good afternoon ☀️",
+  evening: "Good evening 🌇",
+  night: "Good night 🌙",
+}
 
-  const handleSave = () => {
-    const trimmedMessage = customMessage.trim()
-    if (!trimmedMessage) {
-      toast({
-        title: "Error",
-        description: "Please enter a message!",
-        variant: "destructive",
-      })
-      return
-    }
+type Period = keyof typeof defaultMessages
 
-    const overrideData = {
-      message: trimmedMessage,
-      startTime: Date.now(),
-      duration: Number(durationHours) * 60 * 60 * 1000, // duration in ms
-    }
+export default function OutputPage() {
+  const [greeting, setGreeting] = useState("...")
+  const [currentTime, setCurrentTime] = useState("--:--")
+  const [mounted, setMounted] = useState(false)
 
-    localStorage.setItem("greet_override", JSON.stringify(overrideData))
-
-    setCustomMessage("")
-    toast({
-      title: "Success",
-      description: "Saved successfully!",
-    })
-
-    setTimeout(() => {
-      router.push("/output")
-    }, 1000)
+  const getCurrentPeriod = (): Period => {
+    const hour = new Date().getHours()
+    if (hour >= 5 && hour <= 11) return "morning"
+    if (hour >= 12 && hour <= 16) return "afternoon"
+    if (hour >= 17 && hour <= 21) return "evening"
+    return "night"
   }
 
-  const handleReset = () => {
-    localStorage.removeItem("greet_override")
-    toast({
-      title: "Success",
-      description: "Custom message cleared!",
-    })
+  const formatTime = (date: Date) =>
+    String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0")
+
+  const updateGreeting = () => {
+    let message = defaultMessages[getCurrentPeriod()]
+
+    const overrideRaw = localStorage.getItem("greet_override")
+    if (overrideRaw) {
+      try {
+        const override = JSON.parse(overrideRaw)
+        const now = Date.now()
+        if (now - override.startTime < override.duration) {
+          message = override.message
+        } else {
+          localStorage.removeItem("greet_override")
+        }
+      } catch (err) {
+        console.log("Error parsing override:", err)
+      }
+    }
+
+    setGreeting(message)
+    setCurrentTime("Time: " + formatTime(new Date()))
   }
+
+  useEffect(() => {
+    setMounted(true)
+    updateGreeting()
+    const interval = setInterval(updateGreeting, 20000)
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-900">
+          <Link href="/input">
+
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-indigo-400/15 to-cyan-600/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
@@ -62,65 +68,39 @@ export default function HomePage() {
       </div>
 
       <div className="w-full max-w-4xl p-10 relative z-10">
-        <div className="bg-white/10 backdrop-blur-xl p-12 rounded-3xl shadow-2xl border border-white/20 transition-all duration-700 hover:bg-white/15 hover:shadow-3xl hover:border-white/30">
-          <Image
-            src="/electring-wiring-logo.jpg"
-            alt="Mediterranean Electric Wiring Logo"
-            width={180}
-            height={60}
-            className="absolute top-6 left-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
-          />
+        <div className="bg-white/10 backdrop-blur-xl p-12 rounded-3xl shadow-2xl border border-white/20 flex flex-col justify-center items-center text-center h-[450px] relative overflow-hidden">
+            <Image
+              src="/electring-wiring-logo.jpg"
+              alt="Mediterranean Electric Wiring Logo"
+              width={180}
+              height={60}
+              className="absolute top-6 left-6 rounded-2xl cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg"
+            />
 
-          <div className="mt-24 space-y-8 animate-in fade-in duration-1000">
-            {/* Input message */}
-            <div className="space-y-3">
-              <Label htmlFor="customMsg" className="text-white/90 text-lg font-medium tracking-wide">
-                Write a message:
-              </Label>
-              <Input
-                id="customMsg"
-                type="text"
-                placeholder="Type your custom message"
-                value={customMessage}
-                onChange={(e) => setCustomMessage(e.target.value)}
-                className="bg-white/10 border-white/30 text-white placeholder:text-white/60 text-xl p-7 rounded-2xl"
-              />
-            </div>
-
-            {/* Duration */}
-            <div className="space-y-3">
-              <Label className="text-white/90 text-lg font-medium tracking-wide">
-                Duration (hours):
-              </Label>
-              <Input
-                type="number"
-                min="1"
-                max="24"
-                value={durationHours}
-                onChange={(e) => setDurationHours(e.target.value)}
-                className="bg-white/10 border-white/30 text-white text-xl p-7 rounded-2xl"
-              />
-            </div>
-
-            {/* Buttons */}
-            <div className="flex gap-6 pt-6">
-              <Button
-                onClick={handleSave}
-                className="bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-900 font-semibold text-lg px-8 py-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-xl"
-              >
-                Save
-              </Button>
-              <Button
-                onClick={handleReset}
-                variant="outline"
-                className="border-white/30 text-white hover:bg-white/15 hover:border-white/50 text-lg px-8 py-6 rounded-2xl bg-white/5 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-lg"
-              >
-                Clear
-              </Button>
-            </div>
-          </div>
+          {mounted && (
+            <h1 className="text-4xl md:text-6xl lg:text-8xl font-bold text-white/95 mb-2 leading-tight tracking-wide px-4 animate-marquee whitespace-nowrap">
+              {greeting}
+            </h1>
+          )}
+          <p className="absolute bottom-6 right-8 text-xl md:text-2xl text-white/80 opacity-90 font-medium tracking-wide">
+            {currentTime}
+          </p>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes marquee {
+          0% { transform: translateX(100%); }
+          100% { transform: translateX(-100%); }
+        }
+        .animate-marquee {
+          display: inline-block;
+          animation: marquee 10s linear infinite;
+          white-space: nowrap;
+        }
+      `}</style>
+          </Link>
+
     </div>
   )
 }
