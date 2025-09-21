@@ -42,7 +42,7 @@ export default function HomePage() {
         title: "Success",
         description: "Saved successfully!",
       })
-      // redirect to output after small delay to let toast show
+      // redirect to output after small delay
       setTimeout(() => {
         router.push("/")
       }, 900)
@@ -58,9 +58,11 @@ export default function HomePage() {
 
   const handleReset = () => {
     localStorage.removeItem("greet_override")
+    localStorage.removeItem("uploaded_logo") // نحذف زادا اللوغو
+    setUploadedLogo(null)
     toast({
       title: "Success",
-      description: "Custom message cleared!",
+      description: "Custom message and logo cleared!",
     })
   }
 
@@ -69,7 +71,9 @@ export default function HomePage() {
     if (file) {
       const reader = new FileReader()
       reader.onloadend = () => {
-        setUploadedLogo(reader.result as string)
+        const base64Logo = reader.result as string
+        setUploadedLogo(base64Logo)
+        localStorage.setItem("uploaded_logo", base64Logo) // ✅ نحفظو اللوغو
       }
       reader.readAsDataURL(file)
     }
@@ -136,16 +140,19 @@ export default function HomePage() {
                 type="file"
                 accept="image/*"
                 onChange={handleLogoUpload}
-                className="bg-white/10 border-white/30 text-white text-xl  rounded-2xl"
+                className="bg-white/10 border-white/30 text-white text-xl rounded-2xl"
               />
               {uploadedLogo && (
                 <div className="mt-4">
-                  <Image
+                  <img
                     src={uploadedLogo}
-                    alt="Uploaded Logo"
-                    width={150}
-                    height={50}
-                    className="rounded-xl shadow-lg"
+                    alt="Uploaded Logo Preview"
+                    style={{
+                      maxWidth: "180px",
+                      maxHeight: "60px",
+                      borderRadius: "0.75rem",
+                      objectFit: "contain",
+                    }}
                   />
                 </div>
               )}

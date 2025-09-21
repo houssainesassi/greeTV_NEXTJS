@@ -51,7 +51,6 @@ font-weight: 100 900;
     --color-white: #fff;
     --spacing: 0.25rem;
     --container-sm: 24rem;
-    --container-md: 28rem;
     --container-lg: 32rem;
     --container-4xl: 56rem;
     --text-xs: 0.75rem;
@@ -349,9 +348,6 @@ font-weight: 100 900;
   .right-4 {
     right: calc(var(--spacing) * 4);
   }
-  .right-6 {
-    right: calc(var(--spacing) * 6);
-  }
   .right-8 {
     right: calc(var(--spacing) * 8);
   }
@@ -444,9 +440,6 @@ font-weight: 100 900;
   }
   .mt-4 {
     margin-top: calc(var(--spacing) * 4);
-  }
-  .mt-8 {
-    margin-top: calc(var(--spacing) * 8);
   }
   .mt-24 {
     margin-top: calc(var(--spacing) * 24);
@@ -603,9 +596,6 @@ font-weight: 100 900;
   .h-\[450px\] {
     height: 450px;
   }
-  .h-\[550px\] {
-    height: 550px;
-  }
   .h-\[calc\(100\%-1px\)\] {
     height: calc(100% - 1px);
   }
@@ -635,6 +625,9 @@ font-weight: 100 900;
   }
   .max-h-96 {
     max-height: calc(var(--spacing) * 96);
+  }
+  .max-h-\[60px\] {
+    max-height: 60px;
   }
   .max-h-\[300px\] {
     max-height: 300px;
@@ -732,14 +725,14 @@ font-weight: 100 900;
   .max-w-4xl {
     max-width: var(--container-4xl);
   }
+  .max-w-\[150px\] {
+    max-width: 150px;
+  }
   .max-w-\[calc\(100\%-2rem\)\] {
     max-width: calc(100% - 2rem);
   }
   .max-w-max {
     max-width: max-content;
-  }
-  .max-w-md {
-    max-width: var(--container-md);
   }
   .min-w-\(--cell-size\) {
     min-width: var(--cell-size);
@@ -949,13 +942,6 @@ font-weight: 100 900;
       margin-block-end: calc(calc(var(--spacing) * 8) * calc(1 - var(--tw-space-y-reverse)));
     }
   }
-  .space-y-30 {
-    :where(& > :not(:last-child)) {
-      --tw-space-y-reverse: 0;
-      margin-block-start: calc(calc(var(--spacing) * 30) * var(--tw-space-y-reverse));
-      margin-block-end: calc(calc(var(--spacing) * 30) * calc(1 - var(--tw-space-y-reverse)));
-    }
-  }
   .space-x-4 {
     :where(& > :not(:last-child)) {
       --tw-space-x-reverse: 0;
@@ -1128,6 +1114,9 @@ font-weight: 100 900;
   }
   .bg-card {
     background-color: var(--card);
+  }
+  .bg-cyan-400 {
+    background-color: var(--color-cyan-400);
   }
   .bg-destructive {
     background-color: var(--destructive);
@@ -1473,6 +1462,9 @@ font-weight: 100 900;
   }
   .text-accent-foreground {
     color: var(--accent-foreground);
+  }
+  .text-black {
+    color: var(--color-black);
   }
   .text-card-foreground {
     color: var(--card-foreground);
