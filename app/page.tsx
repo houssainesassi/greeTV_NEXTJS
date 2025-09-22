@@ -1,4 +1,5 @@
 "use client"
+
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
@@ -29,9 +30,24 @@ export default function OutputPage() {
   const formatTime = (date: Date) =>
     String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0")
 
-  const updateGreeting = () => {
+  const updateGreeting = async () => {
     let message = defaultMessages[getCurrentPeriod()]
 
+    // Fetch message from API
+    try {
+      const res = await fetch("/api/getmessage")
+      if (res.ok) {
+        const json = await res.json()
+        if (json.success && json.data) {
+          message = json.data.message
+          // Optionally, you can use period_duration: json.data.period_duration
+        }
+      }
+    } catch (err) {
+      console.log("API fetch error:", err)
+    }
+
+    // Check for localStorage override
     const overrideRaw = localStorage.getItem("greet_override")
     if (overrideRaw) {
       try {
@@ -55,11 +71,8 @@ export default function OutputPage() {
     setMounted(true)
     updateGreeting()
 
-    // نجيب اللوغو الثاني من localStorage إذا موجود
     const savedLogo = localStorage.getItem("uploaded_logo")
-    if (savedLogo) {
-      setUploadedLogo(savedLogo)
-    }
+    if (savedLogo) setUploadedLogo(savedLogo)
 
     const interval = setInterval(updateGreeting, 20000)
     return () => clearInterval(interval)
@@ -85,27 +98,26 @@ export default function OutputPage() {
               className="absolute top-6 left-6 rounded-2xl cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg"
             />
 
-           {/* Logo الثاني إذا موجود */}
-{uploadedLogo && (
-  <img
-    src={uploadedLogo}
-    alt="Uploaded Logo"
-    width={180}
-    height={60}
-    style={{
-      position: "absolute",
-      top: "1.5rem",
-      left: "630px",
-      borderRadius: "20px",
-      cursor: "pointer",
-      transition: "all 0.3s",
-      objectFit: "contain",
-      maxWidth: "180px",
-      maxHeight: "60px",
-    }}
-  />
-)}
-
+            {/* Logo الثاني إذا موجود */}
+            {uploadedLogo && (
+              <img
+                src={uploadedLogo}
+                alt="Uploaded Logo"
+                width={180}
+                height={60}
+                style={{
+                  position: "absolute",
+                  top: "1.5rem",
+                  left: "630px",
+                  borderRadius: "20px",
+                  cursor: "pointer",
+                  transition: "all 0.3s",
+                  objectFit: "contain",
+                  maxWidth: "180px",
+                  maxHeight: "60px",
+                }}
+              />
+            )}
 
             {mounted && (
               <h1 className="text-4xl md:text-6xl lg:text-8xl font-bold text-white/95 mb-2 leading-tight tracking-wide px-4 animate-marquee whitespace-nowrap">

@@ -1,6 +1,5 @@
 "use client"
 
-import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -12,13 +11,14 @@ import Link from "next/link"
 
 export default function HomePage() {
   const [customMessage, setCustomMessage] = useState("")
-  const [durationHours, setDurationHours] = useState("1") // default 1 hour
+  const [durationHours, setDurationHours] = useState("1")
   const [uploadedLogo, setUploadedLogo] = useState<string | null>(null)
+  const [securityCode, setSecurityCode] = useState("")
 
   const router = useRouter()
   const { toast } = useToast()
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const trimmedMessage = customMessage.trim()
     if (!trimmedMessage) {
       toast({
@@ -29,25 +29,61 @@ export default function HomePage() {
       return
     }
 
+    if (securityCode.trim() !== "MEW2025") {
+      toast({
+        title: "Error",
+        description: "Invalid security code!",
+        variant: "destructive",
+      })
+      return
+    }
+
     const overrideData = {
       message: trimmedMessage,
       startTime: Date.now(),
-      duration: Number(durationHours) * 60 * 60 * 1000, // duration in ms
+      duration: Number(durationHours) * 60 * 60 * 1000,
     }
 
     try {
+      // Save to localStorage
       localStorage.setItem("greet_override", JSON.stringify(overrideData))
-      setCustomMessage("")
+
+      // Call the API
+      const response = await fetch("/api/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: trimmedMessage,
+          period_duration: Number(durationHours),
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        toast({
+          title: "API Error",
+          description: result.error || "Could not save to API.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Success feedback
       toast({
         title: "Success",
         description: "Saved successfully!",
       })
-      // redirect to output after small delay
+
+      // Reset form
+      setCustomMessage("")
+      setSecurityCode("")
+
       setTimeout(() => {
         router.push("/")
       }, 900)
-    } catch (err) {
-      console.error("LocalStorage error:", err)
+    } catch (err: any) {
+      console.error("Error saving:", err)
       toast({
         title: "Error",
         description: "Could not save the message.",
@@ -58,8 +94,10 @@ export default function HomePage() {
 
   const handleReset = () => {
     localStorage.removeItem("greet_override")
-    localStorage.removeItem("uploaded_logo") // نحذف زادا اللوغو
+    localStorage.removeItem("uploaded_logo")
     setUploadedLogo(null)
+    setCustomMessage("")
+    setSecurityCode("")
     toast({
       title: "Success",
       description: "Custom message and logo cleared!",
@@ -73,7 +111,7 @@ export default function HomePage() {
       reader.onloadend = () => {
         const base64Logo = reader.result as string
         setUploadedLogo(base64Logo)
-        localStorage.setItem("uploaded_logo", base64Logo) // ✅ نحفظو اللوغو
+        localStorage.setItem("uploaded_logo", base64Logo)
       }
       reader.readAsDataURL(file)
     }
@@ -89,7 +127,6 @@ export default function HomePage() {
 
       <div className="w-full max-w-4xl p-10 relative z-10">
         <div className="bg-white/10 backdrop-blur-xl p-12 rounded-3xl shadow-2xl border border-white/20 transition-all duration-700 hover:bg-white/15 hover:shadow-3xl hover:border-white/30">
-          {/* Logo القديم ثابت */}
           <Link href="/">
             <Image
               src="/electring-wiring-logo.jpg"
@@ -101,7 +138,7 @@ export default function HomePage() {
           </Link>
 
           <div className="mt-24 space-y-8 animate-in fade-in duration-1000">
-            {/* Input message */}
+            {/* Custom Message */}
             <div className="space-y-3">
               <Label htmlFor="customMsg" className="text-white/90 text-lg font-medium tracking-wide">
                 Write a message:
@@ -112,6 +149,21 @@ export default function HomePage() {
                 placeholder="Type your custom message"
                 value={customMessage}
                 onChange={(e) => setCustomMessage(e.target.value)}
+                className="bg-white/10 border-white/30 text-white placeholder:text-white/60 text-xl p-7 rounded-2xl"
+              />
+            </div>
+
+            {/* Security Code */}
+            <div className="space-y-3">
+              <Label htmlFor="securityCode" className="text-white/90 text-lg font-medium tracking-wide">
+                Security Code:
+              </Label>
+              <Input
+                id="securityCode"
+                type="text"
+                placeholder="Enter security code"
+                value={securityCode}
+                onChange={(e) => setSecurityCode(e.target.value)}
                 className="bg-white/10 border-white/30 text-white placeholder:text-white/60 text-xl p-7 rounded-2xl"
               />
             </div>
@@ -131,7 +183,7 @@ export default function HomePage() {
               />
             </div>
 
-            {/* Upload Logo جديد */}
+            {/* Upload Logo */}
             <div className="space-y-3">
               <Label className="text-white/90 text-lg font-medium tracking-wide">
                 Upload another logo:
