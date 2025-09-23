@@ -5,9 +5,9 @@ import Image from "next/image"
 import Link from "next/link"
 
 const defaultMessages = {
-  morning: "Good morning 🌅",
-  afternoon: "Good afternoon ☀️",
-  evening: "Good evening 🌇",
+  morning: "Good morning ",
+  afternoon: "Good afternoon",
+  evening: "Good evening ",
   night: "Good night 🌙",
 }
 
