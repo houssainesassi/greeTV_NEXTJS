@@ -2,58 +2,75 @@
 import { supabase } from "@/lib/supabaseClient"
 import { NextResponse } from "next/server"
 
+export async function GET() {
+  try {
+    console.log("👉 GET /api/messages called")
+    console.log("SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
+    console.log("SUPABASE_KEY exists:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+
+    const { data, error } = await supabase
+      .from("messages")
+      .select("id, message, period_duration, updated_at")
+      .order("updated_at", { ascending: false }) // Always get latest
+      .limit(1)
+
+    if (error) {
+      console.error("❌ Supabase SELECT error:", error.message)
+      throw error
+    }
+
+    console.log("✅ Supabase SELECT data:", data)
+
+    return NextResponse.json(
+      { success: true, data: data && data.length > 0 ? data[0] : null },
+      { headers: { "Cache-Control": "no-store" } } // Disable caching on Vercel
+    )
+  } catch (err: any) {
+    console.error("❌ GET /api/messages error:", err.message)
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}
+
 export async function POST(req: Request) {
   try {
     console.log("👉 POST /api/messages called")
-
     const body = await req.json()
     console.log("📥 Request body:", body)
 
     const { message, period_duration } = body
 
     if (!message) {
-      console.warn("⚠️ Missing message field")
       return NextResponse.json({ error: "Message is required" }, { status: 400 })
     }
 
-    console.log("🔎 Checking existing messages...")
+    // Fetch existing row
     const { data: existing, error: fetchError } = await supabase
       .from("messages")
-      .select("*")
+      .select("id")
+      .limit(1)
 
-    if (fetchError) {
-      console.error("❌ Fetch error:", fetchError.message)
-      throw fetchError
-    }
+    if (fetchError) throw fetchError
 
     if (existing && existing.length > 0) {
-      console.log("📝 Updating row id:", existing[0].id)
+      // Update existing row
       const { data, error } = await supabase
         .from("messages")
-        .update({ message, period_duration })
+        .update({ message, period_duration, updated_at: new Date() })
         .eq("id", existing[0].id)
         .select()
 
-      if (error) {
-        console.error("❌ Update error:", error.message)
-        throw error
-      }
+      if (error) throw error
 
-      console.log("✅ Updated row:", data)
       return NextResponse.json({ success: true, action: "update", data })
     } else {
-      console.log("➕ Inserting new row...")
+      // Insert new row
       const { data: inserted, error: insertError } = await supabase
         .from("messages")
-        .insert([{ message, period_duration }])
+        .insert([{ message, period_duration, updated_at: new Date() }])
         .select()
 
-      if (insertError) {
-        console.error("❌ Insert error:", insertError.message)
-        throw insertError
-      }
+      if (insertError) throw insertError
 
-      console.log("✅ Inserted row:", inserted)
       return NextResponse.json({ success: true, action: "insert", data: inserted })
     }
   } catch (err: any) {

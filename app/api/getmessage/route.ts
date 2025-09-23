@@ -13,6 +13,7 @@ export async function GET() {
       .select("message, period_duration")
       .limit(1)
 
+
     if (error) {
       console.error("❌ Supabase SELECT error:", error.message)
       throw error
