@@ -1,5 +1,6 @@
 {
-  "/api/getmessage/route": "app/api/getmessage/route.js",
-  "/api/message/route": "app/api/message/route.js",
-  "/page": "app/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/page": "app/page.js",
+  "/input/page": "app/input/page.js",
+  "/api/message/route": "app/api/message/route.js"
 }

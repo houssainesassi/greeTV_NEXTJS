@@ -34,7 +34,7 @@ export default function OutputPage() {
 
     // Fetch message from API
     try {
-      const res = await fetch("/api/getmessage")
+      const res = await fetch("/api/message")
 
       if (res.ok) {
         const json = await res.json()
