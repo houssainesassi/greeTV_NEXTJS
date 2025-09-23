@@ -17,6 +17,7 @@ export default function OutputPage() {
   const [greeting, setGreeting] = useState("...")
   const [currentTime, setCurrentTime] = useState("--:--")
   const [mounted, setMounted] = useState(false)
+  const [uploadedLogo, setUploadedLogo] = useState<string | null>(null) // <-- add state for uploaded logo
 
   const getCurrentPeriod = (): Period => {
     const hour = new Date().getHours()
@@ -32,15 +33,13 @@ export default function OutputPage() {
   const updateGreeting = async () => {
     let message = defaultMessages[getCurrentPeriod()]
 
-    // Fetch message from API
     try {
-      const res = await fetch("/api/message")
-
+      const res = await fetch("/api/message") // Fetch latest message + logo
       if (res.ok) {
         const json = await res.json()
         if (json.success && json.data) {
           message = json.data.message
-          // Optionally, you can use period_duration: json.data.period_duration
+          setUploadedLogo(json.data.logo || null) // ✅ Set the uploaded logo from API
         }
       }
     } catch (err) {
@@ -70,14 +69,35 @@ export default function OutputPage() {
 
         <div className="w-full max-w-4xl p-10 relative z-10">
           <div className="bg-white/10 backdrop-blur-xl p-12 rounded-3xl shadow-2xl border border-white/20 flex flex-col justify-center items-center text-center h-[450px] relative overflow-hidden">
-            {/* Fixed old logo */}
+            {/* Default Logo */}
             <Image
               src="/electring-wiring-logo.jpg"
-              alt="Old Logo"
+              alt="Default Logo"
               width={180}
               height={60}
               className="absolute top-6 left-6 rounded-2xl cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg"
             />
+
+            {/* Uploaded Logo */}
+            {uploadedLogo && (
+              <img
+                src={uploadedLogo}
+                alt="Uploaded Logo"
+                width={180}
+                height={60}
+                style={{
+                  position: "absolute",
+                  top: "1.5rem",
+                  left: "630px",
+                  borderRadius: "20px",
+                  cursor: "pointer",
+                  transition: "all 0.3s",
+                  objectFit: "contain",
+                  maxWidth: "180px",
+                  maxHeight: "60px",
+                }}
+              />
+            )}
 
             {mounted && (
               <h1 className="text-4xl md:text-6xl lg:text-8xl font-bold text-white/95 mb-2 leading-tight tracking-wide px-4 animate-marquee whitespace-nowrap">

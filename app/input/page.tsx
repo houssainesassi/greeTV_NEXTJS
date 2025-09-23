@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,24 @@ export default function HomePage() {
 
   const router = useRouter()
   const { toast } = useToast()
+
+  // Optional: preload existing message + logo from API
+  useEffect(() => {
+    const fetchMessage = async () => {
+      try {
+        const res = await fetch("/api/message")
+        const data = await res.json()
+        if (data.success && data.data) {
+          setCustomMessage(data.data.message || "")
+          setDurationHours(String(data.data.period_duration || 1))
+          setUploadedLogo(data.data.logo || null)
+        }
+      } catch (err) {
+        console.error("Failed to fetch existing message:", err)
+      }
+    }
+    fetchMessage()
+  }, [])
 
   const handleSave = async () => {
     const trimmedMessage = customMessage.trim()
@@ -39,13 +57,13 @@ export default function HomePage() {
     }
 
     try {
-      
       const response = await fetch("/api/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: trimmedMessage,
           period_duration: Number(durationHours),
+          logo: uploadedLogo, // send logo to API
         }),
       })
 
@@ -60,15 +78,14 @@ export default function HomePage() {
         return
       }
 
-      // Success feedback
       toast({
         title: "Success",
         description: "Saved successfully!",
       })
 
-      // Reset form
       setCustomMessage("")
       setSecurityCode("")
+      setUploadedLogo(null)
 
       setTimeout(() => {
         router.push("/")
