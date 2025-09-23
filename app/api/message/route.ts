@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const { data, error } = await supabase
       .from("messages")
-      .select("id, message, period_duration, logo, updated_at") // أضفنا logo
+      .select("id, message, period_duration, logo, updated_at")
       .order("updated_at", { ascending: false })
       .limit(1)
 
@@ -24,7 +24,15 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { message, period_duration, logo } = body // أضفنا logo
+    const { message, period_duration, logo, securityCode } = body
+
+    // ✅ تحقق من security code (من .env.local)
+    if (securityCode !== process.env.SECURITY_CODE) {
+      return NextResponse.json(
+        { success: false, error: "Invalid security code" },
+        { status: 401 }
+      )
+    }
 
     if (!message) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 })
@@ -41,7 +49,7 @@ export async function POST(req: Request) {
       // تحديث row موجود
       const { data, error } = await supabase
         .from("messages")
-        .update({ message, period_duration, logo, updated_at: new Date() }) // أضفنا logo
+        .update({ message, period_duration, logo, updated_at: new Date() })
         .eq("id", existing[0].id)
         .select()
 
@@ -51,7 +59,7 @@ export async function POST(req: Request) {
       // إدراج row جديد
       const { data: inserted, error: insertError } = await supabase
         .from("messages")
-        .insert([{ message, period_duration, logo, updated_at: new Date() }]) // أضفنا logo
+        .insert([{ message, period_duration, logo, updated_at: new Date() }])
         .select()
 
       if (insertError) throw insertError

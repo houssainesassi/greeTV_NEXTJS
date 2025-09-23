@@ -4,50 +4,48 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 
-const defaultMessages = {
-  morning: "Good morning ",
-  afternoon: "Good afternoon",
-  evening: "Good evening ",
-  night: "Good night 🌙",
-}
-
-type Period = keyof typeof defaultMessages
-
 export default function OutputPage() {
   const [greeting, setGreeting] = useState("...")
   const [currentTime, setCurrentTime] = useState("--:--")
   const [mounted, setMounted] = useState(false)
-  const [uploadedLogo, setUploadedLogo] = useState<string | null>(null) // <-- add state for uploaded logo
-
-  const getCurrentPeriod = (): Period => {
-    const hour = new Date().getHours()
-    if (hour >= 5 && hour <= 11) return "morning"
-    if (hour >= 12 && hour <= 16) return "afternoon"
-    if (hour >= 17 && hour <= 21) return "evening"
-    return "night"
-  }
+  const [uploadedLogo, setUploadedLogo] = useState<string | null>(null)
 
   const formatTime = (date: Date) =>
     String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0")
 
+  // ✅ Function that decides greeting based on current hour
+  const getTimeBasedGreeting = (hour: number) => {
+    if (hour >= 5 && hour < 12) return "Good morning "
+    if (hour >= 12 && hour < 17) return "Good afternoon "
+    if (hour >= 17 && hour < 21) return "Good evening "
+    return "Good night 🌙"
+  }
+
   const updateGreeting = async () => {
-    let message = defaultMessages[getCurrentPeriod()]
+    let message = "..."
+    const now = new Date()
+    const hour = now.getHours()
 
     try {
       const res = await fetch("/api/message") // Fetch latest message + logo
       if (res.ok) {
         const json = await res.json()
         if (json.success && json.data) {
-          message = json.data.message
-          setUploadedLogo(json.data.logo || null) // ✅ Set the uploaded logo from API
+          message = json.data.message || getTimeBasedGreeting(hour) // fallback to time-based
+          setUploadedLogo(json.data.logo || null)
+        } else {
+          message = getTimeBasedGreeting(hour)
         }
+      } else {
+        message = getTimeBasedGreeting(hour)
       }
     } catch (err) {
       console.log("API fetch error:", err)
+      message = getTimeBasedGreeting(hour)
     }
 
     setGreeting(message)
-    setCurrentTime("Time: " + formatTime(new Date()))
+    setCurrentTime("Time: " + formatTime(now))
   }
 
   useEffect(() => {

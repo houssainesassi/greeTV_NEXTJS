@@ -18,7 +18,7 @@ export default function HomePage() {
   const router = useRouter()
   const { toast } = useToast()
 
-  // Optional: preload existing message + logo from API
+  // ✅ preload existing message + logo
   useEffect(() => {
     const fetchMessage = async () => {
       try {
@@ -47,15 +47,6 @@ export default function HomePage() {
       return
     }
 
-    if (securityCode.trim() !== "MEW2025") {
-      toast({
-        title: "Error",
-        description: "Invalid security code!",
-        variant: "destructive",
-      })
-      return
-    }
-
     try {
       const response = await fetch("/api/message", {
         method: "POST",
@@ -63,7 +54,8 @@ export default function HomePage() {
         body: JSON.stringify({
           message: trimmedMessage,
           period_duration: Number(durationHours),
-          logo: uploadedLogo, // send logo to API
+          logo: uploadedLogo,
+          securityCode, // يبعث للسيرفر
         }),
       })
 
@@ -71,7 +63,7 @@ export default function HomePage() {
 
       if (!response.ok) {
         toast({
-          title: "API Error",
+          title: "Error",
           description: result.error || "Could not save to API.",
           variant: "destructive",
         })
@@ -104,6 +96,7 @@ export default function HomePage() {
     setUploadedLogo(null)
     setCustomMessage("")
     setSecurityCode("")
+
     toast({
       title: "Success",
       description: "Custom message and logo cleared!",
@@ -165,7 +158,7 @@ export default function HomePage() {
               </Label>
               <Input
                 id="securityCode"
-                type="text"
+                type="password"
                 placeholder="Enter security code"
                 value={securityCode}
                 onChange={(e) => setSecurityCode(e.target.value)}
