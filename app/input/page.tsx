@@ -38,17 +38,8 @@ export default function HomePage() {
       return
     }
 
-    const overrideData = {
-      message: trimmedMessage,
-      startTime: Date.now(),
-      duration: Number(durationHours) * 60 * 60 * 1000,
-    }
-
     try {
-      // Save to localStorage
-      localStorage.setItem("greet_override", JSON.stringify(overrideData))
-
-      // Call the API
+      
       const response = await fetch("/api/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -93,8 +84,6 @@ export default function HomePage() {
   }
 
   const handleReset = () => {
-    localStorage.removeItem("greet_override")
-    localStorage.removeItem("uploaded_logo")
     setUploadedLogo(null)
     setCustomMessage("")
     setSecurityCode("")
@@ -111,7 +100,6 @@ export default function HomePage() {
       reader.onloadend = () => {
         const base64Logo = reader.result as string
         setUploadedLogo(base64Logo)
-        localStorage.setItem("uploaded_logo", base64Logo)
       }
       reader.readAsDataURL(file)
     }

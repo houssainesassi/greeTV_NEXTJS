@@ -17,7 +17,6 @@ export default function OutputPage() {
   const [greeting, setGreeting] = useState("...")
   const [currentTime, setCurrentTime] = useState("--:--")
   const [mounted, setMounted] = useState(false)
-  const [uploadedLogo, setUploadedLogo] = useState<string | null>(null)
 
   const getCurrentPeriod = (): Period => {
     const hour = new Date().getHours()
@@ -47,22 +46,6 @@ export default function OutputPage() {
       console.log("API fetch error:", err)
     }
 
-    // Check for localStorage override
-    const overrideRaw = localStorage.getItem("greet_override")
-    if (overrideRaw) {
-      try {
-        const override = JSON.parse(overrideRaw)
-        const now = Date.now()
-        if (now - override.startTime < override.duration) {
-          message = override.message
-        } else {
-          localStorage.removeItem("greet_override")
-        }
-      } catch (err) {
-        console.log("Error parsing override:", err)
-      }
-    }
-
     setGreeting(message)
     setCurrentTime("Time: " + formatTime(new Date()))
   }
@@ -70,9 +53,6 @@ export default function OutputPage() {
   useEffect(() => {
     setMounted(true)
     updateGreeting()
-
-    const savedLogo = localStorage.getItem("uploaded_logo")
-    if (savedLogo) setUploadedLogo(savedLogo)
 
     const interval = setInterval(updateGreeting, 20000)
     return () => clearInterval(interval)
@@ -89,7 +69,7 @@ export default function OutputPage() {
 
         <div className="w-full max-w-4xl p-10 relative z-10">
           <div className="bg-white/10 backdrop-blur-xl p-12 rounded-3xl shadow-2xl border border-white/20 flex flex-col justify-center items-center text-center h-[450px] relative overflow-hidden">
-            {/* Logo القديم ثابت */}
+            {/* Fixed old logo */}
             <Image
               src="/electring-wiring-logo.jpg"
               alt="Old Logo"
@@ -97,27 +77,6 @@ export default function OutputPage() {
               height={60}
               className="absolute top-6 left-6 rounded-2xl cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg"
             />
-
-            {/* Logo الثاني إذا موجود */}
-            {uploadedLogo && (
-              <img
-                src={uploadedLogo}
-                alt="Uploaded Logo"
-                width={180}
-                height={60}
-                style={{
-                  position: "absolute",
-                  top: "1.5rem",
-                  left: "630px",
-                  borderRadius: "20px",
-                  cursor: "pointer",
-                  transition: "all 0.3s",
-                  objectFit: "contain",
-                  maxWidth: "180px",
-                  maxHeight: "60px",
-                }}
-              />
-            )}
 
             {mounted && (
               <h1 className="text-4xl md:text-6xl lg:text-8xl font-bold text-white/95 mb-2 leading-tight tracking-wide px-4 animate-marquee whitespace-nowrap">
